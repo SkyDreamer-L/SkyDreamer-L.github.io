@@ -1,11 +1,696 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 网站标题 - 可替换为你的博客名称 -->
     <title>SDL-BLOG</title>
-</head>
-<body>
     
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 - 科幻风格暗色调 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    // 科幻风格配色方案
+                    colors: {
+                        // 主色调：深蓝色/太空蓝
+                        primary: '#00f0ff',
+                        // 辅助色：霓虹紫
+                        secondary: '#9d4edd',
+                        // 强调色：霓虹粉
+                        accent: '#ff2a6d',
+                        // 背景色：深太空灰/近黑色
+                        dark: '#0a0e17',
+                        // 次要背景色：稍浅的太空灰
+                        'dark-light': '#121a29',
+                        // 文本主色：浅灰
+                        'text-primary': '#e0e0ff',
+                        // 文本次要色：中灰
+                        'text-secondary': '#8a93a6'
+                    },
+                    // 科幻感字体
+                    fontFamily: {
+                        // 无衬线字体，适合科技感
+                        sans: ['Orbitron', 'Rajdhani', 'system-ui', 'sans-serif'],
+                        // 标题使用更具未来感的字体
+                        display: ['Orbitron', 'sans-serif']
+                    },
+                    // 自定义动画效果
+                    animation: {
+                        // 脉冲效果，模拟能量波动
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        // 悬浮效果，模拟零重力
+                        'float': 'float 6s ease-in-out infinite',
+                        // 辉光效果
+                        'glow': 'glow 2s ease-in-out infinite alternate'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(0, 240, 255, 0.5)' },
+                            '100%': { boxShadow: '0 0 20px rgba(0, 240, 255, 0.8)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 - 方便复用的科幻风格样式 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* 内容自动可见性 */
+            .content-auto {
+                content-visibility: auto;
+            }
+            /* 文本平衡 */
+            .text-balance {
+                text-wrap: balance;
+            }
+            /* 科幻风格边框 */
+            .border-glow {
+                box-shadow: 0 0 5px theme('colors.primary'), 
+                            inset 0 0 5px theme('colors.primary');
+            }
+            /* 霓虹文字效果 */
+            .text-glow {
+                text-shadow: 0 0 8px theme('colors.primary');
+            }
+            /* 科幻风格分隔线 */
+            .divider-sci-fi {
+                height: 1px;
+                background: linear-gradient(90deg, 
+                            transparent, 
+                            theme('colors.primary'), 
+                            transparent);
+            }
+            /* 网格背景，模拟数字界面 */
+            .grid-bg {
+                background-image: 
+                    linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+        }
+    </style>
+    
+    <!-- 引入Google字体 - 增强科幻感 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<!-- 页面主体 - 暗色调背景，网格纹理 -->
+<body class="bg-dark text-text-primary grid-bg min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-50 bg-dark/80 backdrop-blur-md border-b border-primary/20">
+        <div class="container mx-auto px-4 py-4">
+            <!-- 导航内容容器 -->
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                
+                <!-- 移动端菜单按钮 - 仅在小屏幕显示 -->
+                <button id="mobile-menu-button" class="md:hidden text-primary text-2xl mb-4 md:mb-0">
+                    <i class="fa fa-bars"></i>
+                </button>
+                
+                <!-- 博客标题 - 居中显示，科幻风格 -->
+                <a href="#" class="text-2xl md:text-3xl font-display font-bold text-primary text-glow text-center">
+                    <span class="text-white">星际</span>日志
+                </a>
+                
+                <!-- 桌面端导航链接 -->
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-home"></i> 首页
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-book"></i> 文章
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-tags"></i> 分类
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-user"></i> 关于
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-search"></i> 搜索
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 - 默认隐藏 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-dark-light border-t border-primary/20">
+            <div class="container mx-auto px-4 py-3">
+                <nav class="flex flex-col space-y-3">
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-home w-6 text-center"></i> 首页
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-book w-6 text-center"></i> 文章
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-tags w-6 text-center"></i> 分类
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-user w-6 text-center"></i> 关于
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-search w-6 text-center"></i> 搜索
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 英雄区/头部横幅 - 科幻风格标题和简介 -->
+        <section class="mb-12 text-center">
+            <!-- 日期/时间显示 - 模拟星际日期 -->
+            <div class="text-text-secondary mb-2 text-sm font-mono">
+                <span id="current-date">星际日期: 2402.07.30</span>
+            </div>
+            
+            <!-- 主标题 - 居中，大尺寸，霓虹效果 -->
+            <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-display font-bold mb-4 text-glow">
+                探索宇宙的<span class="text-primary">无限可能</span>
+            </h1>
+            
+            <!-- 副标题/简介 -->
+            <p class="text-text-secondary max-w-2xl mx-auto text-lg mb-8">
+                记录关于星际旅行、人工智能、未来科技与宇宙奥秘的思考与探索
+            </p>
+            
+            <!-- 装饰性分隔线 -->
+            <div class="divider-sci-fi max-w-xl mx-auto mb-8"></div>
+        </section>
+
+        <!-- 主要内容网格 - 左侧文章列表，右侧边栏 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧：博客文章列表 (占2/3宽度) -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- 文章1 - 特色文章 -->
+                <article class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 hover:border-primary/50 transition-all duration-300 animate-float">
+                    <!-- 文章图片 -->
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://picsum.photos/id/1/800/400" alt="黑洞探索" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700">
+                        <!-- 图片上的渐变遮罩，增强文字可读性 -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                        <!-- 文章分类标签 -->
+                        <div class="absolute top-4 left-4 bg-secondary/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                            宇宙探索
+                        </div>
+                    </div>
+                    
+                    <!-- 文章内容 -->
+                    <div class="p-6">
+                        <!-- 文章标题 -->
+                        <h2 class="text-2xl font-display font-bold mb-3 hover:text-primary transition-colors duration-300">
+                            <a href="#">黑洞内部的时间扭曲：最新理论研究</a>
+                        </h2>
+                        
+                        <!-- 文章元数据：日期、阅读时间 -->
+                        <div class="flex items-center gap-4 text-text-secondary text-sm mb-4">
+                            <span class="flex items-center gap-1"><i class="fa fa-calendar"></i> 2402.07.28</span>
+                            <span class="flex items-center gap-1"><i class="fa fa-clock-o"></i> 8分钟阅读</span>
+                            <span class="flex items-center gap-1"><i class="fa fa-eye"></i> 1,243</span>
+                        </div>
+                        
+                        <!-- 文章摘要 -->
+                        <p class="text-text-secondary mb-6">
+                            最新研究表明，黑洞内部可能存在时间扭曲现象，这一发现挑战了我们对时空结构的传统理解。本文将深入探讨这一突破性理论及其对星际旅行的潜在影响...
+                        </p>
+                        
+                        <!-- 阅读更多按钮 -->
+                        <a href="#" class="inline-flex items-center gap-2 text-primary hover:text-white hover:bg-primary/20 px-4 py-2 rounded border border-primary/50 transition-all duration-300">
+                            阅读全文 <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </article>
+                
+                <!-- 文章2 -->
+                <article class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 hover:border-primary/50 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row">
+                        <!-- 文章图片 -->
+                        <div class="md:w-1/3 relative h-48 md:h-auto overflow-hidden">
+                            <img src="https://picsum.photos/id/237/400/300" alt="人工智能伦理" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700">
+                        </div>
+                        
+                        <!-- 文章内容 -->
+                        <div class="md:w-2/3 p-6">
+                            <!-- 文章分类标签 -->
+                            <div class="inline-block bg-accent/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm mb-3">
+                                人工智能
+                            </div>
+                            
+                            <!-- 文章标题 -->
+                            <h2 class="text-xl font-display font-bold mb-3 hover:text-primary transition-colors duration-300">
+                                <a href="#">超智能AI的伦理边界：我们准备好了吗？</a>
+                            </h2>
+                            
+                            <!-- 文章元数据 -->
+                            <div class="flex items-center gap-4 text-text-secondary text-sm mb-4">
+                                <span class="flex items-center gap-1"><i class="fa fa-calendar"></i> 2402.07.25</span>
+                                <span class="flex items-center gap-1"><i class="fa fa-clock-o"></i> 6分钟阅读</span>
+                            </div>
+                            
+                            <!-- 文章摘要 -->
+                            <p class="text-text-secondary mb-4 line-clamp-3">
+                                随着AI技术的飞速发展，超智能系统的出现可能比我们预期的更早。本文探讨了人工智能伦理的边界问题，以及人类社会应对这一变革的准备情况...
+                            </p>
+                            
+                            <!-- 阅读更多按钮 -->
+                            <a href="#" class="inline-flex items-center gap-2 text-primary hover:text-white hover:bg-primary/20 px-3 py-1 rounded border border-primary/50 transition-all duration-300 text-sm">
+                                继续阅读 <i class="fa fa-angle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+                
+                <!-- 文章3 -->
+                <article class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 hover:border-primary/50 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row">
+                        <!-- 文章图片 -->
+                        <div class="md:w-1/3 relative h-48 md:h-auto overflow-hidden">
+                            <img src="https://picsum.photos/id/110/400/300" alt="星际殖民" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700">
+                        </div>
+                        
+                        <!-- 文章内容 -->
+                        <div class="md:w-2/3 p-6">
+                            <!-- 文章分类标签 -->
+                            <div class="inline-block bg-secondary/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm mb-3">
+                                星际旅行
+                            </div>
+                            
+                            <!-- 文章标题 -->
+                            <h2 class="text-xl font-display font-bold mb-3 hover:text-primary transition-colors duration-300">
+                                <a href="#">火星殖民的生态挑战：建立可持续封闭系统</a>
+                            </h2>
+                            
+                            <!-- 文章元数据 -->
+                            <div class="flex items-center gap-4 text-text-secondary text-sm mb-4">
+                                <span class="flex items-center gap-1"><i class="fa fa-calendar"></i> 2402.07.20</span>
+                                <span class="flex items-center gap-1"><i class="fa fa-clock-o"></i> 10分钟阅读</span>
+                            </div>
+                            
+                            <!-- 文章摘要 -->
+                            <p class="text-text-secondary mb-4 line-clamp-3">
+                                火星殖民不仅面临技术挑战，更需要解决长期生存的生态问题。本文分析了建立自给自足封闭生态系统的最新研究，以及未来火星城市的可能形态...
+                            </p>
+                            
+                            <!-- 阅读更多按钮 -->
+                            <a href="#" class="inline-flex items-center gap-2 text-primary hover:text-white hover:bg-primary/20 px-3 py-1 rounded border border-primary/50 transition-all duration-300 text-sm">
+                                继续阅读 <i class="fa fa-angle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+                
+                <!-- 文章4 -->
+                <article class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 hover:border-primary/50 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row">
+                        <!-- 文章图片 -->
+                        <div class="md:w-1/3 relative h-48 md:h-auto overflow-hidden">
+                            <img src="https://picsum.photos/id/160/400/300" alt="量子计算" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700">
+                        </div>
+                        
+                        <!-- 文章内容 -->
+                        <div class="md:w-2/3 p-6">
+                            <!-- 文章分类标签 -->
+                            <div class="inline-block bg-accent/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm mb-3">
+                                未来科技
+                            </div>
+                            
+                            <!-- 文章标题 -->
+                            <h2 class="text-xl font-display font-bold mb-3 hover:text-primary transition-colors duration-300">
+                                <a href="#">量子计算突破：首次实现1000量子比特稳定纠缠</a>
+                            </h2>
+                            
+                            <!-- 文章元数据 -->
+                            <div class="flex items-center gap-4 text-text-secondary text-sm mb-4">
+                                <span class="flex items-center gap-1"><i class="fa fa-calendar"></i> 2402.07.15</span>
+                                <span class="flex items-center gap-1"><i class="fa fa-clock-o"></i> 7分钟阅读</span>
+                            </div>
+                            
+                            <!-- 文章摘要 -->
+                            <p class="text-text-secondary mb-4 line-clamp-3">
+                                科学家最近宣布在量子计算领域取得重大突破，成功实现了1000量子比特的稳定纠缠状态。这一进展将如何改变我们处理复杂问题的能力？本文深入解析...
+                            </p>
+                            
+                            <!-- 阅读更多按钮 -->
+                            <a href="#" class="inline-flex items-center gap-2 text-primary hover:text-white hover:bg-primary/20 px-3 py-1 rounded border border-primary/50 transition-all duration-300 text-sm">
+                                继续阅读 <i class="fa fa-angle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+                
+                <!-- 加载更多按钮 -->
+                <div class="text-center pt-4">
+                    <button class="bg-dark-light hover:bg-dark-light/70 text-primary border border-primary/30 hover:border-primary px-6 py-3 rounded-lg transition-all duration-300 animate-pulse-slow">
+                        加载更多文章 <i class="fa fa-refresh ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧：边栏 (占1/3宽度) -->
+            <div class="space-y-8">
+                <!-- 作者信息卡片 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-6 text-center">
+                    <!-- 作者头像 -->
+                    <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary animate-glow">
+                        <img src="https://picsum.photos/id/64/200/200" alt="作者头像" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <!-- 作者名称 -->
+                    <h3 class="text-xl font-display font-bold mb-2 text-primary">星际旅行者</h3>
+                    
+                    <!-- 作者简介 -->
+                    <p class="text-text-secondary text-sm mb-4">
+                        前NASA物理学家，现星际探索日志作者，专注于宇宙奥秘与未来科技研究
+                    </p>
+                    
+                    <!-- 社交媒体链接 -->
+                    <div class="flex justify-center gap-3">
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-youtube-play"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 搜索框 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-search text-primary"></i> 搜索文章
+                    </h3>
+                    
+                    <form class="flex">
+                        <input type="text" placeholder="输入关键词..." class="flex-1 bg-dark border border-primary/30 focus:border-primary focus:outline-none rounded-l-lg px-4 py-2 text-text-primary">
+                        <button type="submit" class="bg-primary text-dark px-4 py-2 rounded-r-lg hover:bg-primary/80 transition-colors duration-300">
+                            <i class="fa fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- 分类列表 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-tags text-primary"></i> 文章分类
+                    </h3>
+                    
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="#" class="flex justify-between items-center py-2 px-3 hover:bg-dark rounded transition-colors duration-300">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                    宇宙探索
+                                </span>
+                                <span class="bg-dark text-text-secondary text-xs px-2 py-1 rounded-full">24</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex justify-between items-center py-2 px-3 hover:bg-dark rounded transition-colors duration-300">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                    人工智能
+                                </span>
+                                <span class="bg-dark text-text-secondary text-xs px-2 py-1 rounded-full">18</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex justify-between items-center py-2 px-3 hover:bg-dark rounded transition-colors duration-300">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                                    星际旅行
+                                </span>
+                                <span class="bg-dark text-text-secondary text-xs px-2 py-1 rounded-full">15</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex justify-between items-center py-2 px-3 hover:bg-dark rounded transition-colors duration-300">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                    未来科技
+                                </span>
+                                <span class="bg-dark text-text-secondary text-xs px-2 py-1 rounded-full">21</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex justify-between items-center py-2 px-3 hover:bg-dark rounded transition-colors duration-300">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                    外星文明
+                                </span>
+                                <span class="bg-dark text-text-secondary text-xs px-2 py-1 rounded-full">9</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 热门文章 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-fire text-primary"></i> 热门文章
+                    </h3>
+                    
+                    <ul class="space-y-4">
+                        <li class="flex gap-3">
+                            <a href="#" class="w-20 h-20 flex-shrink-0 rounded overflow-hidden">
+                                <img src="https://picsum.photos/id/180/100/100" alt="时间旅行悖论" class="w-full h-full object-cover">
+                            </a>
+                            <div>
+                                <a href="#" class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2">
+                                    时间旅行悖论的最新解释：多重宇宙理论
+                                </a>
+                                <p class="text-text-secondary text-xs mt-1">2402.06.18</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <a href="#" class="w-20 h-20 flex-shrink-0 rounded overflow-hidden">
+                                <img src="https://picsum.photos/id/235/100/100" alt="外星信号" class="w-full h-full object-cover">
+                            </a>
+                            <div>
+                                <a href="#" class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2">
+                                    解密"哇信号"：40年后的新发现
+                                </a>
+                                <p class="text-text-secondary text-xs mt-1">2402.05.22</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <a href="#" class="w-20 h-20 flex-shrink-0 rounded overflow-hidden">
+                                <img src="https://picsum.photos/id/216/100/100" alt="意识上传" class="w-full h-full object-cover">
+                            </a>
+                            <div>
+                                <a href="#" class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2">
+                                    意识上传的可能性：数字永生不再是科幻
+                                </a>
+                                <p class="text-text-secondary text-xs mt-1">2402.04.30</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <a href="#" class="w-20 h-20 flex-shrink-0 rounded overflow-hidden">
+                                <img src="https://picsum.photos/id/225/100/100" alt="暗物质" class="w-full h-full object-cover">
+                            </a>
+                            <div>
+                                <a href="#" class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2">
+                                    暗物质研究新突破：我们可能终于"看到"它了
+                                </a>
+                                <p class="text-text-secondary text-xs mt-1">2402.03.15</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 订阅区域 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5 relative overflow-hidden">
+                    <!-- 背景装饰元素 -->
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-primary/10 rounded-full blur-xl"></div>
+                    <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-secondary/10 rounded-full blur-xl"></div>
+                    
+                    <h3 class="text-lg font-display font-semibold mb-3 flex items-center gap-2 relative z-10">
+                        <i class="fa fa-envelope text-primary"></i> 订阅星际通讯
+                    </h3>
+                    
+                    <p class="text-text-secondary text-sm mb-4 relative z-10">
+                        获取最新的科幻资讯和独家内容，直接发送到您的终端
+                    </p>
+                    
+                    <form class="space-y-3 relative z-10">
+                        <input type="email" placeholder="您的邮箱地址" class="w-full bg-dark border border-primary/30 focus:border-primary focus:outline-none rounded-lg px-4 py-2 text-text-primary text-sm">
+                        <button type="submit" class="w-full bg-primary hover:bg-primary/80 text-dark font-medium py-2 rounded-lg transition-colors duration-300">
+                            立即订阅
+                        </button>
+                    </form>
+                    
+                    <p class="text-text-secondary text-xs mt-3 text-center relative z-10">
+                        我们尊重您的隐私，不会分享您的信息
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark-light border-t border-primary/20 mt-16">
+        <div class="container mx-auto px-4 py-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- 博客信息 -->
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4 text-primary text-glow">
+                        <span class="text-white">星际</span>日志
+                    </h3>
+                    <p class="text-text-secondary text-sm mb-4">
+                        探索宇宙的无限可能，记录未来科技的发展轨迹，思考人类在宇宙中的位置
+                    </p>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-youtube-play"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 快速链接 -->
+                <div>
+                    <h4 class="text-lg font-display font-semibold mb-4 text-primary">快速链接</h4>
+                    <ul class="space-y-2 text-text-secondary">
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">首页</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">所有文章</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">分类浏览</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">关于作者</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">联系我们</a></li>
+                    </ul>
+                </div>
+                
+                <!-- 联系信息 -->
+                <div>
+                    <h4 class="text-lg font-display font-semibold mb-4 text-primary">联系我们</h4>
+                    <ul class="space-y-3 text-text-secondary text-sm">
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-envelope text-primary mt-1"></i>
+                            <span>contact@stardiary.space</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-map-marker text-primary mt-1"></i>
+                            <span>星际空间站 42号模块</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-comments text-primary mt-1"></i>
+                            <span>加入我们的Discord社区</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 分隔线 -->
+            <div class="divider-sci-fi my-8"></div>
+            
+            <!-- 版权信息 -->
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-text-secondary text-sm mb-4 md:mb-0">
+                    &copy; 2402 星际日志. 保留所有权利.
+                </p>
+                <div class="flex gap-6 text-text-secondary text-sm">
+                    <a href="#" class="hover:text-primary transition-colors duration-300">隐私政策</a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300">使用条款</a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300">Cookie政策</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 bg-dark-light border border-primary/50 text-primary w-12 h-12 rounded-full flex items-center justify-center shadow-lg opacity-0 invisible transition-all duration-300 hover:bg-primary hover:text-dark z-50">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <!-- JavaScript功能 -->
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端菜单切换功能
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                // 切换菜单显示状态
+                mobileMenu.classList.toggle('hidden');
+                
+                // 切换图标（汉堡/关闭）
+                const icon = mobileMenuButton.querySelector('i');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+            
+            // 回到顶部按钮功能
+            const backToTopButton = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                // 当页面滚动超过300px时显示回到顶部按钮
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.remove('opacity-0', 'invisible');
+                    backToTopButton.classList.add('opacity-100', 'visible');
+                } else {
+                    backToTopButton.classList.add('opacity-0', 'invisible');
+                    backToTopButton.classList.remove('opacity-100', 'visible');
+                }
+            });
+            
+            backToTopButton.addEventListener('click', function() {
+                // 平滑滚动到页面顶部
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // 显示当前日期（科幻风格）
+            function updateSciFiDate() {
+                const now = new Date();
+                // 模拟星际日期：当前年份 + 400年
+                const sciFiYear = now.getFullYear() + 400;
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                
+                const dateElement = document.getElementById('current-date');
+                if (dateElement) {
+                    dateElement.textContent = `星际日期: ${sciFiYear}.${month}.${day}`;
+                }
+            }
+            
+            // 更新星际日期
+            updateSciFiDate();
+        });
+    </script>
 </body>
 </html>
