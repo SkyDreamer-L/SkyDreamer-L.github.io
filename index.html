@@ -121,8 +121,10 @@
                 </button>
                 
                 <!-- 博客标题 - 居中显示，科幻风格 -->
-                <a href="#" class="text-2xl md:text-3xl font-display font-bold text-primary text-glow text-center">
-                    <span class="text-white">星际</span>日志
+                <!-- 压缩字间距 + 压缩字体宽度 -->
+                <a href="#" class="text-2xl md:text-3xl font-display font-bold text-primary text-glow text-center
+                                tracking-tighter [font-stretch:condensed]">
+                    <span class="text-white">SDL-</span>BLOG
                 </a>
                 
                 <!-- 桌面端导航链接 -->
@@ -181,12 +183,12 @@
             
             <!-- 主标题 - 居中，大尺寸，霓虹效果 -->
             <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-display font-bold mb-4 text-glow">
-                探索宇宙的<span class="text-primary">无限可能</span>
+                欢迎来到我的 <span class="text-primary">BLOG</span>
             </h1>
             
             <!-- 副标题/简介 -->
             <p class="text-text-secondary max-w-2xl mx-auto text-lg mb-8">
-                记录关于星际旅行、人工智能、未来科技与宇宙奥秘的思考与探索
+                记录学习生活、人工智能、未来科技与兴趣爱好
             </p>
             
             <!-- 装饰性分隔线 -->
@@ -367,15 +369,15 @@
                 <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-6 text-center">
                     <!-- 作者头像 -->
                     <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary animate-glow">
-                        <img src="https://picsum.photos/id/64/200/200" alt="作者头像" class="w-full h-full object-cover">
+                        <img src="https://raw.githubusercontent.com/SkyDreamer-L/SkyDreamer-L.github.io/refs/heads/main/%E5%BE%AE%E4%BF%A1%E5%A4%B4%E5%83%8F.jpg" alt="作者头像" class="w-full h-full object-cover">
                     </div>
                     
                     <!-- 作者名称 -->
-                    <h3 class="text-xl font-display font-bold mb-2 text-primary">星际旅行者</h3>
+                    <h3 class="text-xl font-display font-bold mb-2 text-primary">SkyDreamer</h3>
                     
                     <!-- 作者简介 -->
                     <p class="text-text-secondary text-sm mb-4">
-                        前NASA物理学家，现星际探索日志作者，专注于宇宙奥秘与未来科技研究
+                        本人现为初三蒟蒻，致力于写博客
                     </p>
                     
                     <!-- 社交媒体链接 -->
@@ -678,13 +680,13 @@
             function updateSciFiDate() {
                 const now = new Date();
                 // 模拟星际日期：当前年份 + 400年
-                const sciFiYear = now.getFullYear() + 400;
+                const sciFiYear = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 
                 const dateElement = document.getElementById('current-date');
                 if (dateElement) {
-                    dateElement.textContent = `星际日期: ${sciFiYear}.${month}.${day}`;
+                    dateElement.textContent = `现在日期: ${sciFiYear}.${month}.${day}`;
                 }
             }
             
