@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjan算法与强连通分量 | SDL-BLOG</title>
+    
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind自定义主题 - 科幻风格暗色调 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00f0ff',
+                        secondary: '#9d4edd',
+                        accent: '#ff2a6d',
+                        dark: '#0a0e17',
+                        'dark-light': '#121a29',
+                        'text-primary': '#e0e0ff',
+                        'text-secondary': '#8a93a6'
+                    },
+                    fontFamily: {
+                        sans: ['Orbitron', 'Rajdhani', 'system-ui', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(0, 240, 255, 0.5)' },
+                            '100%': { boxShadow: '0 0 20px rgba(0, 240, 255, 0.8)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-balance {
+                text-wrap: balance;
+            }
+            .border-glow {
+                box-shadow: 0 0 5px theme('colors.primary'), 
+                            inset 0 0 5px theme('colors.primary');
+            }
+            .text-glow {
+                text-shadow: 0 0 8px theme('colors.primary');
+            }
+            .divider-sci-fi {
+                height: 1px;
+                background: linear-gradient(90deg, 
+                            transparent, 
+                            theme('colors.primary'), 
+                            transparent);
+            }
+            .grid-bg {
+                background-image: 
+                    linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+            .code-block {
+                position: relative;
+                background-color: rgba(18, 26, 41, 0.8);
+                border: 1px solid rgba(0, 240, 255, 0.3);
+                border-radius: 6px;
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+            .code-block:hover {
+                border-color: rgba(0, 240, 255, 0.7);
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            }
+        }
+    </style>
+    
+    <!-- 引入字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-dark text-text-primary grid-bg min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-50 bg-dark/80 backdrop-blur-md border-b border-primary/20">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <button id="mobile-menu-button" class="md:hidden text-primary text-2xl mb-4 md:mb-0">
+                    <i class="fa fa-bars"></i>
+                </button>
+                
+                <a href="#" class="text-2xl md:text-3xl font-display font-bold text-primary text-glow text-center
+                                tracking-tighter [font-stretch:condensed]">
+                    <span class="text-white">SDL-</span>BLOG
+                </a>
+                
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-home"></i> 首页
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-book"></i> 文章
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-tags"></i> 分类
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-user"></i> 关于
+                    </a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300 flex items-center gap-1">
+                        <i class="fa fa-search"></i> 搜索
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <div id="mobile-menu" class="hidden md:hidden bg-dark-light border-t border-primary/20">
+            <div class="container mx-auto px-4 py-3">
+                <nav class="flex flex-col space-y-3">
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-home w-6 text-center"></i> 首页
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-book w-6 text-center"></i> 文章
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-tags w-6 text-center"></i> 分类
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-user w-6 text-center"></i> 关于
+                    </a>
+                    <a href="#" class="py-2 hover:text-primary transition-colors duration-300 flex items-center gap-2">
+                        <i class="fa fa-search w-6 text-center"></i> 搜索
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 文章头部信息 -->
+        <section class="mb-12 max-w-4xl mx-auto">
+            <div class="text-text-secondary mb-2 text-sm font-mono">
+                <span id="current-date">现在日期: 2025.08.02</span>
+            </div>
+            
+            <div class="inline-block bg-secondary/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm mb-4">
+                算法研究
+            </div>
+            
+            <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-display font-bold mb-6 text-glow leading-tight">
+                Tarjan算法与强连通分量<span class="text-primary">深度解析</span>
+            </h1>
+            
+            <div class="flex items-center gap-4 text-text-secondary text-sm mb-8 flex-wrap">
+                <span class="flex items-center gap-1"><i class="fa fa-calendar"></i> 2025.08.01</span>
+                <span class="flex items-center gap-1"><i class="fa fa-clock-o"></i> 15分钟阅读</span>
+                <span class="flex items-center gap-1"><i class="fa fa-eye"></i> 3,452 次浏览</span>
+                <span class="flex items-center gap-1"><i class="fa fa-comment"></i> 24 条评论</span>
+            </div>
+            
+            <div class="divider-sci-fi max-w-2xl mx-auto mb-8"></div>
+        </section>
+
+        <!-- 文章内容与边栏 -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            <!-- 文章内容 (占3/4宽度) -->
+            <div class="lg:col-span-3">
+                <article class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-6 md:p-8">
+                    <!-- 文章封面图 -->
+                    <div class="relative h-64 md:h-80 overflow-hidden rounded-lg mb-8 border border-primary/20">
+                        <img src="https://picsum.photos/id/180/1200/600" alt="有向图与强连通分量可视化" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-sm text-text-secondary">
+                            图论中的强连通分量可视化：节点间的复杂连接关系
+                        </div>
+                    </div>
+                    
+                    <!-- 引言 -->
+                    <p class="text-lg mb-8 leading-relaxed">
+                        在计算机科学的图论领域，强连通分量(Strongly Connected Components, SCC)是一个基础而重要的概念。它不仅帮助我们理解图的结构特性，还在编译器设计、网络分析、社交网络研究等多个领域有着广泛应用。本文将深入探讨强连通分量的定义、Tarjan算法的原理与实现，以及其在实际问题中的应用。
+                    </p>
+                    
+                    <!-- 目录 -->
+                    <div class="bg-dark/50 border border-primary/20 rounded-lg p-5 mb-10">
+                        <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2 text-primary">
+                            <i class="fa fa-list-ul"></i> 文章目录
+                        </h3>
+                        <ul class="space-y-2 pl-2">
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#definition" class="hover:text-primary transition-colors duration-300">定义与基本概念</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#dfs-tree" class="hover:text-primary transition-colors duration-300">DFS生成树与边的类型</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#tarjan-algorithm" class="hover:text-primary transition-colors duration-300">Tarjan算法原理</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#implementation" class="hover:text-primary transition-colors duration-300">算法代码实现</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#topological-sort" class="hover:text-primary transition-colors duration-300">与拓扑排序的关系</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fa fa-angle-right text-primary/70 text-sm"></i>
+                                <a href="#applications" class="hover:text-primary transition-colors duration-300">实际应用场景</a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 定义部分 -->
+                    <section id="definition" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">定义与基本概念</h2>
+                        
+                        <div class="mb-6">
+                            <p class="mb-4 leading-relaxed">
+                                强连通的定义是：有向图 <span class="text-primary font-medium">G</span> 强连通是指，<span class="text-primary font-medium">G</span> 中任意两个结点连通。
+                            </p>
+                            <p class="leading-relaxed">
+                                强连通分量（Strongly Connected Components，SCC）的定义是：<span class="text-primary font-medium">极大的强连通子图</span>。
+                            </p>
+                        </div>
+                        
+                        <div class="bg-dark/50 border border-primary/20 rounded-lg p-5 mb-6">
+                            <p class="italic text-text-secondary">
+                                <i class="fa fa-lightbulb-o text-accent mr-2"></i>
+                                极大意味着这个子图不能被更大的强连通子图所包含，也就是说，它是图中最大的强连通子结构。
+                            </p>
+                        </div>
+                        
+                        <div class="relative h-64 md:h-80 mb-6 rounded-lg overflow-hidden border border-primary/20">
+                            <canvas id="sccVisualization" class="w-full h-full"></canvas>
+                        </div>
+                    </section>
+                    
+                    <!-- DFS生成树部分 -->
+                    <section id="dfs-tree" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">DFS生成树与边的类型</h2>
+                        
+                        <p class="mb-6 leading-relaxed">
+                            在介绍Tarjan算法之前，我们需要先了解DFS生成树的概念。对于一个有向图，通过深度优先搜索(DFS)可以生成一棵特殊的树，其中包含四种不同类型的边。
+                        </p>
+                        
+                        <div class="mb-8">
+                            <img src="https://cdn.luogu.com.cn/upload/image_hosting/tcxmhux9.png?x-oss-process=image/resize,m_lfit,h_170,w_225" 
+                                 alt="有向图的DFS生成树" 
+                                 class="w-full max-w-lg mx-auto rounded-lg border border-primary/20 mb-4">
+                            <p class="text-center text-sm text-text-secondary">有向图的DFS生成树示意图，展示了四种不同类型的边</p>
+                        </div>
+                        
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-dark/30 p-4 rounded-lg border-l-4 border-primary">
+                                <h3 class="font-semibold mb-2 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-primary text-dark flex items-center justify-center text-sm">1</span>
+                                    树边（tree edge）
+                                </h3>
+                                <p class="text-text-secondary">
+                                    示意图中以黑色边表示，每次搜索找到一个还没有访问过的结点的时候就形成了一条树边。
+                                </p>
+                            </div>
+                            
+                            <div class="bg-dark/30 p-4 rounded-lg border-l-4 border-red-500">
+                                <h3 class="font-semibold mb-2 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-sm">2</span>
+                                    反祖边（back edge）
+                                </h3>
+                                <p class="text-text-secondary">
+                                    示意图中以红色边表示（即7至1），也被叫做回边，即指向祖先结点的边。
+                                </p>
+                            </div>
+                            
+                            <div class="bg-dark/30 p-4 rounded-lg border-l-4 border-blue-500">
+                                <h3 class="font-semibold mb-2 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm">3</span>
+                                    横叉边（cross edge）
+                                </h3>
+                                <p class="text-text-secondary">
+                                    示意图中以蓝色边表示（即9至7），它主要是在搜索的时候遇到了一个已经访问过的结点，但是这个结点并不是当前结点的祖先。<strong>注意</strong>:起点的dfn大于终点的dfn。
+                                </p>
+                            </div>
+                            
+                            <div class="bg-dark/30 p-4 rounded-lg border-l-4 border-green-500">
+                                <h3 class="font-semibold mb-2 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm">4</span>
+                                    前向边（forward edge）
+                                </h3>
+                                <p class="text-text-secondary">
+                                    示意图中以绿色边表示（即3至6），它是在搜索的时候遇到子树中的结点的时候形成的。
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <p class="leading-relaxed">
+                            我们考虑DFS生成树与强连通分量之间的关系：如果结点u是某个强连通分量在搜索树中遇到的第一个结点，那么这个强连通分量的其余结点肯定是在搜索树中以u为根的子树中。结点u被称为这个强连通分量的根。
+                        </p>
+                    </section>
+                    
+                    <!-- Tarjan算法原理 -->
+                    <section id="tarjan-algorithm" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">Tarjan算法原理</h2>
+                        
+                        <p class="mb-6 leading-relaxed">
+                            Tarjan算法基于对图进行<strong>深度优先搜索</strong>。我们视每个连通分量为搜索树中的一棵子树，在搜索过程中，维护一个栈，每次把搜索树中尚未处理的节点加入栈中。
+                        </p>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-xl font-semibold mb-4 text-primary">核心变量定义</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="bg-dark/50 border border-primary/20 rounded-lg p-4">
+                                    <p class="font-mono text-primary mb-2">dfn<sub>u</sub></p>
+                                    <p class="text-text-secondary">
+                                        u的dfs序，即节点u被首次访问的顺序编号。
+                                    </p>
+                                </div>
+                                
+                                <div class="bg-dark/50 border border-primary/20 rounded-lg p-4">
+                                    <p class="font-mono text-primary mb-2">low<sub>u</sub></p>
+                                    <p class="text-text-secondary">
+                                        在u的子树中能够回溯到的最早的已经在栈中的结点。设以u为根的子树为Subtree<sub>u</sub>。low<sub>u</sub>定义为以下结点的dfn的最小值：Subtree<sub>u</sub>中的结点；从Subtree<sub>u</sub>通过一条不在搜索树上的边能到达的结点。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="mb-6 leading-relaxed">
+                            显而易见，一个结点的子树内结点的dfn都大于该结点的dfn。从根开始的一条路径上的dfn严格递增，low严格非降。
+                        </p>
+                        
+                        <div class="divider-sci-fi my-6"></div>
+                        
+                        <h3 class="text-xl font-semibold mb-4 text-primary">算法执行流程</h3>
+                        
+                        <p class="mb-4 leading-relaxed">
+                            按照深度优先搜索算法搜索的次序对图中所有的结点进行搜索，维护每个结点的dfn与low变量，且让搜索到的结点入栈。每当找到一个强连通元素，就按照该元素包含结点数目让栈中元素出栈。在搜索过程中，对于结点u和与其相邻的结点v（v不是u的父节点）考虑3种情况：
+                        </p>
+                        
+                        <ol class="list-decimal pl-6 space-y-4 mb-6">
+                            <li class="pl-2">
+                                <p class="font-medium">v未被访问</p>
+                                <p class="text-text-secondary mt-1">
+                                    继续对v进行深度搜索。在回溯过程中，用low<sub>v</sub>更新low<sub>u</sub>。因为存在从u到v的直接路径，所以v能够回溯到的已经在栈中的结点，u也一定能够回溯到。
+                                </p>
+                            </li>
+                            <li class="pl-2">
+                                <p class="font-medium">v被访问过，已经在栈中</p>
+                                <p class="text-text-secondary mt-1">
+                                    根据low值的定义，用dfn<sub>v</sub>更新low<sub>u</sub>。
+                                </p>
+                            </li>
+                            <li class="pl-2">
+                                <p class="font-medium">v被访问过，已不在栈中</p>
+                                <p class="text-text-secondary mt-1">
+                                    说明v已搜索完毕，其所在连通分量已被处理，所以不用对其做操作。
+                                </p>
+                            </li>
+                        </ol>
+                        
+                        <p class="leading-relaxed">
+                            当一个节点的dfn值等于其low值时，说明该节点是一个强连通分量的根节点，此时我们可以将栈中该节点及以上的所有节点弹出，这些节点构成一个强连通分量。
+                        </p>
+                    </section>
+                    
+                    <!-- 代码实现 -->
+                    <section id="implementation" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">算法代码实现</h2>
+                        
+                        <p class="mb-6 leading-relaxed">
+                            以下是Tarjan算法的C++实现代码，时间复杂度为O(n+m)，其中n是节点数，m是边数。
+                        </p>
+                        
+                        <div class="code-block mb-6">
+                            <div class="bg-dark/80 px-4 py-2 border-b border-primary/30 flex justify-between items-center">
+                                <span class="text-primary font-mono text-sm">tarjan_algorithm.cpp</span>
+                                <button class="text-text-secondary hover:text-primary transition-colors duration-300" onclick="copyCode(this)">
+                                    <i class="fa fa-copy"></i> 复制代码
+                                </button>
+                            </div>
+                            <pre class="p-4 overflow-x-auto text-sm font-mono text-text-secondary leading-relaxed"><code>#include&lt;iostream&gt;
+#include&lt;cstdio&gt;
+#include&lt;algorithm&gt;
+#include&lt;vector&gt;
+#define N 10005
+using namespace std;
+
+int n, m;
+vector&lt;int&gt; e[N];  // 邻接表存储图
+int dfn[N], low[N], cnt;  // dfn: 深度优先搜索序, low: 最早可回溯的节点序号, cnt: 计数器
+int st[N], top;  // 栈及栈顶指针
+bool ins[N];  // 标记节点是否在栈中
+int idx, sz[N], bel[N];  // idx: 强连通分量编号, sz: 每个分量的大小, bel: 节点所属分量
+int ans;  // 统计大小大于1的强连通分量数量
+
+// 深度优先搜索函数
+inline void dfs(int u) {
+    dfn[u] = low[u] = ++cnt;  // 初始化dfn和low
+    ins[st[++top] = u] = true;  // 将节点入栈并标记
+    
+    // 遍历所有邻接节点
+    for(int i = 0; i &lt; e[u].size(); i++) {
+        int v = e[u][i];
+        
+        if(!dfn[v]) {  // 节点v未被访问
+            dfs(v);  // 递归访问v
+            low[u] = min(low[u], low[v]);  // 回溯时更新low[u]
+        } else if(ins[v]) {  // 节点v已访问且在栈中
+            low[u] = min(low[u], dfn[v]);  // 更新low[u]
+        }
+        // 节点v已访问且不在栈中: 无需处理
+    }
+    
+    // 找到一个强连通分量的根节点
+    if(dfn[u] == low[u]) {
+        int v; 
+        ++idx;  // 分量编号递增
+        
+        // 将栈中该分量的所有节点弹出
+        do {
+            v = st[top--];
+            ins[v] = false;  // 标记为不在栈中
+            bel[v] = idx;  // 记录节点所属分量
+            ++sz[idx];  // 分量大小递增
+        } while(v != u);  // 直到弹出当前节点u
+    }
+}
+
+int main() {
+    scanf("%d%d", &amp;n, &amp;m);
+    
+    // 读入边并构建邻接表
+    for(int i = 1; i &lt;= m; i++) {
+        int u, v; 
+        scanf("%d%d", &amp;u, &amp;v);
+        e[u].push_back(v);
+    }
+    
+    // 对所有未访问的节点执行DFS
+    for(int i = 1; i &lt;= n; i++) {
+        if(!dfn[i]) 
+            dfs(i);
+    }
+    
+    // 统计大小大于1的强连通分量数量
+    for(int i = 1; i &lt;= idx; i++) 
+        ans += (sz[i] &gt; 1);
+    
+    printf("%d\n", ans);  // 输出结果
+    
+    // 输出每个节点所属的强连通分量
+    for(int i = 1; i &lt;= n; i++) {
+        printf("%d%c", bel[i], "\n"[i == n]);
+    }
+    
+    return 0;
+}</code></pre>
+                        </div>
+                        
+                        <div class="bg-dark/50 border border-primary/20 rounded-lg p-5">
+                            <h4 class="font-semibold mb-3 text-primary flex items-center gap-2">
+                                <i class="fa fa-info-circle"></i> 代码解析
+                            </h4>
+                            <ul class="space-y-2 text-text-secondary text-sm">
+                                <li class="flex items-start gap-2">
+                                    <i class="fa fa-check text-primary mt-1"></i>
+                                    <span>算法使用邻接表存储图结构，适合处理稀疏图</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa fa-check text-primary mt-1"></i>
+                                    <span>通过栈来维护当前正在处理的节点集合</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa fa-check text-primary mt-1"></i>
+                                    <span>当dfn[u] == low[u]时，说明找到一个强连通分量的根</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa fa-check text-primary mt-1"></i>
+                                    <span>算法时间复杂度为O(n+m)，线性时间内完成</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <!-- 拓扑排序部分 -->
+                    <section id="topological-sort" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">与拓扑排序的关系</h2>
+                        
+                        <p class="mb-6 leading-relaxed">
+                            考察Tarjan算法中被最优先处理的点，发现显然就是那些没有出度的点，而这和拓扑排序恰好是相反的。又因为SCC编号是按顺序排列的，所以本质上相当于把拓扑序反转了过来。
+                        </p>
+                        
+                        <div class="bg-dark/50 border border-primary/20 rounded-lg p-5 mb-6">
+                            <p class="text-xl font-semibold text-primary text-center">
+                                SCC编号等于逆拓扑序
+                            </p>
+                            <p class="text-center text-text-secondary mt-2">
+                                DP转移顺序应为逆拓扑序
+                            </p>
+                        </div>
+                        
+                        <h3 class="text-xl font-semibold mb-4 text-primary">重要结论</h3>
+                        
+                        <p class="mb-4 leading-relaxed">
+                            一个有向图中，如果将所有强连通分量缩成一个点，则这个图一定无环，即为DAG（有向无环图）。
+                        </p>
+                        
+                        <h4 class="font-semibold mb-3 text-primary">证明</h4>
+                        
+                        <p class="leading-relaxed">
+                            反证，假设这个图中有环，环上的点代表的SCC组成的集合为S，则从S中任取两个集合，从这两个集合中分别取一个元素x,y，必然存在一个先从x到环上，绕环一周，再到y所在SCC，最后到达y的路径，因此S应在同一个SCC中，证毕。
+                        </p>
+                        
+                        <div class="mt-8 relative h-64 md:h-80 rounded-lg overflow-hidden border border-primary/20">
+                            <canvas id="sccCondensation" class="w-full h-full"></canvas>
+                        </div>
+                        <p class="text-center text-sm text-text-secondary mt-2">强连通分量缩点后形成的DAG图</p>
+                    </section>
+                    
+                    <!-- 应用部分 -->
+                    <section id="applications" class="mb-12">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">实际应用场景</h2>
+                        
+                        <div class="space-y-8">
+                            <div class="bg-dark/30 rounded-lg p-6 border border-primary/20">
+                                <h3 class="text-xl font-semibold mb-4 text-primary">问题1：信息传递覆盖</h3>
+                                
+                                <div class="mb-4">
+                                    <p class="font-medium mb-2">问题描述：</p>
+                                    <p class="text-text-secondary">
+                                        求最少选择几个点，使得信息可传递到所有点。
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <p class="font-medium mb-2">解决方案：</p>
+                                    <p class="text-text-secondary">
+                                        选择所有入度为0的点，因为这些点无法通过其他点传递得到。在将图缩为DAG后，统计入度为0的强连通分量数量，就是所需的最少点数。
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-dark/30 rounded-lg p-6 border border-primary/20">
+                                <h3 class="text-xl font-semibold mb-4 text-primary">问题2：图的强连通化</h3>
+                                
+                                <div class="mb-4">
+                                    <p class="font-medium mb-2">问题描述：</p>
+                                    <p class="text-text-secondary">
+                                        求最少添加几条边，使得原图变为一个强连通分量。
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <p class="font-medium mb-2">解决方案：</p>
+                                    <p class="text-text-secondary mb-2">
+                                        先缩点，因为强连通分量内部节点可相互到达。要使整个图成为强连通分量，每个节点的入度和出度都不应为0，而应至少为1。
+                                    </p>
+                                    <p class="text-text-secondary">
+                                        具体做法是：计算缩点后DAG图中入度为0的节点数量（记为in0）和出度为0的节点数量（记为out0），答案就是max(in0, out0)。特别地，如果原图已经是强连通分量，则答案为0。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- 后记 -->
+                    <section class="mb-8">
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">后记</h2>
+                        
+                        <div class="bg-dark/50 border border-primary/20 rounded-lg p-5">
+                            <ul class="space-y-2 text-text-secondary">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-primary font-mono">update</span>: <span>2025/7/30</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-primary font-mono">update</span>: <span>2025/7/31</span>
+                                    <span class="ml-2">说明: 增加代码实现</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-primary font-mono">update</span>: <span>2025/8/1</span>
+                                    <span class="ml-2">说明: 添加关于强连通分量的一些应用部分</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <!-- 评论区 -->
+                    <section>
+                        <h2 class="text-2xl font-display font-bold mb-6 pb-2 border-b border-primary/30 text-primary">评论区</h2>
+                        
+                        <div class="space-y-6">
+                            <!-- 评论输入框 -->
+                            <div class="bg-dark/50 border border-primary/20 rounded-lg p-5">
+                                <h3 class="text-lg font-semibold mb-4 text-primary">发表评论</h3>
+                                <textarea class="w-full bg-dark border border-primary/30 focus:border-primary focus:outline-none rounded-lg px-4 py-3 text-text-primary min-h-[120px]" placeholder="分享你的想法..."></textarea>
+                                <div class="mt-4 flex justify-end">
+                                    <button class="bg-primary hover:bg-primary/80 text-dark font-medium px-6 py-2 rounded-lg transition-colors duration-300">
+                                        发布评论
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 评论列表 -->
+                            <div>
+                                <h3 class="text-lg font-semibold mb-4 text-primary">最新评论 (24)</h3>
+                                
+                                <div class="space-y-6">
+                                    <!-- 评论1 -->
+                                    <div class="bg-dark/30 rounded-lg p-5 border border-primary/10">
+                                        <div class="flex items-start gap-4">
+                                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                                                <img src="https://picsum.photos/id/1001/100/100" alt="用户头像" class="w-full h-full object-cover">
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <h4 class="font-medium">图论爱好者</h4>
+                                                    <span class="text-text-secondary text-sm">3天前</span>
+                                                </div>
+                                                <p class="text-text-secondary mb-3">
+                                                    非常详细的讲解！我一直对Tarjan算法中low值的更新机制不太理解，看了这篇文章后豁然开朗。特别是对四种边的处理方式解释得很清楚。
+                                                </p>
+                                                <div class="flex items-center gap-4 text-sm text-text-secondary">
+                                                    <button class="hover:text-primary transition-colors duration-300"><i class="fa fa-thumbs-up mr-1"></i> 赞同(15)</button>
+                                                    <button class="hover:text-primary transition-colors duration-300"><i class="fa fa-reply mr-1"></i> 回复</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 评论2 -->
+                                    <div class="bg-dark/30 rounded-lg p-5 border border-primary/10">
+                                        <div class="flex items-start gap-4">
+                                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                                                <img src="https://picsum.photos/id/1002/100/100" alt="用户头像" class="w-full h-full object-cover">
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <h4 class="font-medium">算法学习者</h4>
+                                                    <span class="text-text-secondary text-sm">1周前</span>
+                                                </div>
+                                                <p class="text-text-secondary mb-3">
+                                                    请问在处理横叉边的时候，为什么不需要更新low值呢？我有点困惑，因为横叉边也可能连接到之前的节点。
+                                                </p>
+                                                <div class="flex items-center gap-4 text-sm text-text-secondary">
+                                                    <button class="hover:text-primary transition-colors duration-300"><i class="fa fa-thumbs-up mr-1"></i> 赞同(8)</button>
+                                                    <button class="hover:text-primary transition-colors duration-300"><i class="fa fa-reply mr-1"></i> 回复</button>
+                                                </div>
+                                                
+                                                <!-- 回复 -->
+                                                <div class="mt-4 ml-6 pl-4 border-l-2 border-primary/30">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                                            <img src="https://i.imgs.ovh/2025/08/02/J0Gsx.jpeg" alt="作者头像" class="w-full h-full object-cover">
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <div class="flex justify-between items-center mb-1">
+                                                                <h5 class="font-medium text-primary">SkyDreamer <span class="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded ml-2">作者</span></h5>
+                                                                <span class="text-text-secondary text-xs">6天前</span>
+                                                            </div>
+                                                            <p class="text-text-secondary text-sm mb-2">
+                                                                因为横叉边的终点如果在栈中，就会被视为前向边处理；如果不在栈中，则说明它属于已经处理完毕的强连通分量，所以不需要更新当前节点的low值。
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 加载更多评论 -->
+                                    <div class="text-center">
+                                        <button class="bg-dark-light hover:bg-dark-light/70 text-primary border border-primary/30 hover:border-primary px-6 py-2 rounded-lg transition-all duration-300">
+                                            加载更多评论 <i class="fa fa-refresh ml-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </article>
+            </div>
+            
+            <!-- 右侧边栏 (占1/4宽度) -->
+            <div class="space-y-8">
+                <!-- 作者信息卡片 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-6 text-center transition-all duration-500 hover:shadow-lg hover:shadow-primary/10">
+                    <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary animate-glow transition-all duration-300 bg-dark-light">
+                        <img src="https://i.imgs.ovh/2025/08/02/J0Gsx.jpeg" 
+                            alt="作者头像" 
+                            class="w-full h-full object-cover transition-transform duration-400 ease-in-out">
+                    </div>
+                    
+                    <h3 class="text-xl font-display font-bold mb-2 text-primary transition-colors duration-300 hover:text-primary/80">SkyDreamer</h3>
+                    
+                    <p class="text-text-secondary text-sm mb-4 transition-all duration-300 hover:text-text-secondary/90">
+                        本人现为初三蒟蒻，致力于写博客
+                    </p>
+                    
+                    <div class="flex justify-center gap-3">
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300 transform hover:scale(1.1) hover:rotate(5deg)">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300 transform hover:scale(1.1) hover:rotate(5deg)">
+                            <i class="fa fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300 transform hover:scale(1.1) hover:rotate(5deg)">
+                            <i class="fa fa-youtube-play"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300 transform hover:scale(1.1) hover:rotate(5deg)">
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 文章目录 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5 sticky top-24">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-list-ul text-primary"></i> 文章导航
+                    </h3>
+                    <nav class="toc space-y-1 text-sm overflow-y-auto max-h-[400px] pr-1">
+                        <a href="#definition" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">定义与基本概念</a>
+                        <a href="#dfs-tree" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">DFS生成树与边的类型</a>
+                        <a href="#tarjan-algorithm" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">Tarjan算法原理</a>
+                        <a href="#implementation" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">算法代码实现</a>
+                        <a href="#topological-sort" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">与拓扑排序的关系</a>
+                        <a href="#applications" class="block py-2 px-3 hover:bg-dark rounded transition-colors duration-300">实际应用场景</a>
+                    </nav>
+                </div>
+                
+                <!-- 相关文章 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-link text-primary"></i> 相关文章
+                    </h3>
+                    
+                    <ul class="space-y-4">
+                        <li>
+                            <a href="#" class="flex gap-3 group">
+                                <div class="w-20 h-20 flex-shrink-0 rounded overflow-hidden border border-primary/20 group-hover:border-primary transition-colors duration-300">
+                                    <img src="https://picsum.photos/id/160/100/100" alt="Kosaraju算法" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2 group-hover:text-primary">
+                                        Kosaraju算法：另一种求强连通分量的有效方法
+                                    </p>
+                                    <p class="text-text-secondary text-xs mt-1">2025.07.10</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex gap-3 group">
+                                <div class="w-20 h-20 flex-shrink-0 rounded overflow-hidden border border-primary/20 group-hover:border-primary transition-colors duration-300">
+                                    <img src="https://picsum.photos/id/170/100/100" alt="拓扑排序" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2 group-hover:text-primary">
+                                        拓扑排序算法详解与应用场景分析
+                                    </p>
+                                    <p class="text-text-secondary text-xs mt-1">2025.06.25</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex gap-3 group">
+                                <div class="w-20 h-20 flex-shrink-0 rounded overflow-hidden border border-primary/20 group-hover:border-primary transition-colors duration-300">
+                                    <img src="https://picsum.photos/id/180/100/100" alt="图的应用" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium hover:text-primary transition-colors duration-300 line-clamp-2 group-hover:text-primary">
+                                        图论在编译器设计中的应用：控制流分析
+                                    </p>
+                                    <p class="text-text-secondary text-xs mt-1">2025.06.10</p>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 标签云 -->
+                <div class="bg-dark-light rounded-lg overflow-hidden border border-primary/20 p-5">
+                    <h3 class="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <i class="fa fa-tags text-primary"></i> 标签
+                    </h3>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">图论</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">算法</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">Tarjan</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">强连通分量</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">深度优先搜索</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">拓扑排序</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">C++</a>
+                        <a href="#" class="px-3 py-1 bg-dark text-text-secondary hover:bg-primary hover:text-dark rounded-full text-sm transition-all duration-300">编程</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark-light border-t border-primary/20 mt-16">
+        <div class="container mx-auto px-4 py-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4 text-primary text-glow">
+                        <span class="text-white">星际</span>日志
+                    </h3>
+                    <p class="text-text-secondary text-sm mb-4">
+                        探索宇宙的无限可能，记录未来科技的发展轨迹，思考人类在宇宙中的位置
+                    </p>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-youtube-play"></i>
+                        </a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-dark flex items-center justify-center text-primary hover:bg-primary hover:text-dark transition-all duration-300">
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-display font-semibold mb-4 text-primary">快速链接</h4>
+                    <ul class="space-y-2 text-text-secondary">
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">首页</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">所有文章</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">分类浏览</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">关于作者</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors duration-300">联系我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-display font-semibold mb-4 text-primary">联系我们</h4>
+                    <ul class="space-y-3 text-text-secondary text-sm">
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-envelope text-primary mt-1"></i>
+                            <span>contact@stardiary.space</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-map-marker text-primary mt-1"></i>
+                            <span>星际空间站 42号模块</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa fa-comments text-primary mt-1"></i>
+                            <span>加入我们的Discord社区</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="divider-sci-fi my-8"></div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-text-secondary text-sm mb-4 md:mb-0">
+                    &copy; 2025 星际日志. 保留所有权利.
+                </p>
+                <div class="flex gap-6 text-text-secondary text-sm">
+                    <a href="#" class="hover:text-primary transition-colors duration-300">隐私政策</a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300">使用条款</a>
+                    <a href="#" class="hover:text-primary transition-colors duration-300">Cookie政策</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 bg-dark-light border border-primary/50 text-primary w-12 h-12 rounded-full flex items-center justify-center shadow-lg opacity-0 invisible transition-all duration-300 hover:bg-primary hover:text-dark z-50">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <!-- JavaScript功能 -->
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端菜单切换功能
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+                
+                const icon = mobileMenuButton.querySelector('i');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+            
+            // 回到顶部按钮功能
+            const backToTopButton = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.remove('opacity-0', 'invisible');
+                    backToTopButton.classList.add('opacity-100', 'visible');
+                } else {
+                    backToTopButton.classList.add('opacity-0', 'invisible');
+                    backToTopButton.classList.remove('opacity-100', 'visible');
+                }
+                
+                // 更新目录高亮
+                updateActiveTocItem();
+            });
+            
+            backToTopButton.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // 显示当前日期
+            function updateSciFiDate() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                
+                const dateElement = document.getElementById('current-date');
+                if (dateElement) {
+                    dateElement.textContent = `现在日期: ${year}.${month}.${day}`;
+                }
+            }
+            
+            // 复制代码功能
+            function copyCode(button) {
+                const codeBlock = button.closest('.code-block');
+                const code = codeBlock.querySelector('code').textContent;
+                
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fa fa-check"></i> 已复制';
+                    button.classList.add('text-accent');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('text-accent');
+                    }, 2000);
+                });
+            }
+            
+            // 更新目录当前项高亮
+            function updateActiveTocItem() {
+                const sections = document.querySelectorAll('section[id]');
+                const tocItems = document.querySelectorAll('.toc a');
+                
+                let currentSectionId = '';
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.offsetHeight;
+                    
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                        currentSectionId = section.getAttribute('id');
+                    }
+                });
+                
+                tocItems.forEach(item => {
+                    item.classList.remove('bg-dark', 'text-primary');
+                    if (item.getAttribute('href') === `#${currentSectionId}`) {
+                        item.classList.add('bg-dark', 'text-primary');
+                    }
+                });
+            }
+            
+            // 强连通分量可视化
+            function initSCCVisualization() {
+                const ctx = document.getElementById('sccVisualization').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: '强连通分量 1',
+                                data: [
+                                    { x: 10, y: 20 },
+                                    { x: 15, y: 25 },
+                                    { x: 20, y: 20 },
+                                    { x: 15, y: 15 }
+                                ],
+                                backgroundColor: 'rgba(0, 240, 255, 0.7)',
+                                borderColor: 'rgba(0, 240, 255, 1)',
+                                pointRadius: 8,
+                                pointHoverRadius: 10
+                            },
+                            {
+                                label: '强连通分量 2',
+                                data: [
+                                    { x: 40, y: 30 },
+                                    { x: 45, y: 35 },
+                                    { x: 50, y: 30 }
+                                ],
+                                backgroundColor: 'rgba(157, 78, 221, 0.7)',
+                                borderColor: 'rgba(157, 78, 221, 1)',
+                                pointRadius: 8,
+                                pointHoverRadius: 10
+                            },
+                            {
+                                label: '强连通分量 3',
+                                data: [
+                                    { x: 25, y: 50 }
+                                ],
+                                backgroundColor: 'rgba(255, 42, 109, 0.7)',
+                                borderColor: 'rgba(255, 42, 109, 1)',
+                                pointRadius: 8,
+                                pointHoverRadius: 10
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '强连通分量可视化',
+                                color: '#e0e0ff',
+                                font: {
+                                    size: 16,
+                                    family: 'Orbitron'
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#8a93a6'
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                min: 0,
+                                max: 60,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#8a93a6'
+                                }
+                            },
+                            y: {
+                                min: 0,
+                                max: 60,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#8a93a6'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 缩点DAG图可视化
+            function initSCCCondensation() {
+                const ctx = document.getElementById('sccCondensation').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: '分量 A',
+                                data: [{ x: 10, y: 30 }],
+                                backgroundColor: 'rgba(0, 240, 255, 0.7)',
+                                borderColor: 'rgba(0, 240, 255, 1)',
+                                pointRadius: 15,
+                                pointHoverRadius: 18
+                            },
+                            {
+                                label: '分量 B',
+                                data: [{ x: 30, y: 30 }],
+                                backgroundColor: 'rgba(157, 78, 221, 0.7)',
+                                borderColor: 'rgba(157, 78, 221, 1)',
+                                pointRadius: 15,
+                                pointHoverRadius: 18
+                            },
+                            {
+                                label: '分量 C',
+                                data: [{ x: 50, y: 30 }],
+                                backgroundColor: 'rgba(255, 42, 109, 0.7)',
+                                borderColor: 'rgba(255, 42, 109, 1)',
+                                pointRadius: 15,
+                                pointHoverRadius: 18
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '强连通分量缩点后的DAG图',
+                                color: '#e0e0ff',
+                                font: {
+                                    size: 16,
+                                    family: 'Orbitron'
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#8a93a6'
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line',
+                                        xMin: 12,
+                                        xMax: 28,
+                                        yMin: 30,
+                                        yMax: 30,
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        arrow: {
+                                            display: true,
+                                            scale: 1
+                                        }
+                                    },
+                                    line2: {
+                                        type: 'line',
+                                        xMin: 32,
+                                        xMax: 48,
+                                        yMin: 30,
+                                        yMax: 30,
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        arrow: {
+                                            display: true,
+                                            scale: 1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                min: 0,
+                                max: 60,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#8a93a6'
+                                }
+                            },
+                            y: {
+                                min: 0,
+                                max: 60,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#8a93a6'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化图表
+            if (typeof Chart !== 'undefined') {
+                initSCCVisualization();
+                initSCCCondensation();
+            }
+            
+            // 初始化日期
+            updateSciFiDate();
+            
+            // 初始化目录高亮
+            updateActiveTocItem();
+            
+            // 平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                        
+                        // 移动端菜单自动关闭
+                        if (!mobileMenu.classList.contains('hidden')) {
+                            mobileMenu.classList.add('hidden');
+                            const icon = mobileMenuButton.querySelector('i');
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
